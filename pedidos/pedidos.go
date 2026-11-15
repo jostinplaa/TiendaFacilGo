@@ -1,29 +1,44 @@
-// Package pedidos: módulo 4, creación de pedidos y control de stock.
+// Paquete pedidos: módulo 4, convierte el carrito en pedido y controla el stock.
 package pedidos
 
-import (
-	"errors"
-	"tiendafacil/fn"
-	m "tiendafacil/modelo"
-	"time"
-)
+import "tiendafacil/modelo"
 
-func HayStock(c []m.ItemCarrito) bool {
-	return fn.All(c, func(i m.ItemCarrito) bool { return i.Producto.Stock >= i.Cantidad })
-}
-
-func Crear(num int, cli m.Cliente, c []m.ItemCarrito, total float64) (m.Pedido, error) {
-	if len(c) == 0 || !HayStock(c) {
-		return m.Pedido{}, errors.New("carrito vacío o sin stock")
-	}
-	return m.Pedido{Numero: num, Cliente: cli, Items: c, Total: total, Estado: m.Pendiente, Fecha: time.Now()}, nil
-}
-
-func DescontarStock(inv []m.Producto, p m.Pedido) []m.Producto {
-	return fn.Map(inv, func(prod m.Producto) m.Producto {
-		if it, ok := fn.Find(p.Items, func(i m.ItemCarrito) bool { return i.Producto.Codigo == prod.Codigo }); ok {
-			return prod.ConStock(prod.Stock - it.Cantidad)
+// HayStockSuficiente revisa que haya unidades para cada producto del carrito.
+func HayStockSuficiente(carrito []modelo.ItemCarrito) bool {
+	for _, item := range carrito {
+		if item.Producto.Stock < item.Cantidad {
+			return false
 		}
-		return prod
-	})
+	}
+	return true
+}
+
+// Crear arma el pedido solo si el carrito no está vacío y hay stock.
+func Crear(numero int, cliente modelo.Cliente, carrito []modelo.ItemCarrito, total float64) (modelo.Pedido, bool) {
+	if len(carrito) == 0 || !HayStockSuficiente(carrito) {
+		return modelo.Pedido{}, false
+	}
+	pedido := modelo.Pedido{
+		Numero:  numero,
+		Cliente: cliente,
+		Items:   carrito,
+		Total:   total,
+		Estado:  modelo.Pendiente,
+	}
+	return pedido, true
+}
+
+// DescontarStock devuelve un inventario NUEVO con las unidades vendidas restadas.
+// "p" es una copia de cada producto, por eso el inventario original no cambia.
+func DescontarStock(inventario []modelo.Producto, pedido modelo.Pedido) []modelo.Producto {
+	nuevo := []modelo.Producto{}
+	for _, p := range inventario {
+		for _, item := range pedido.Items {
+			if item.Producto.Codigo == p.Codigo {
+				p.Stock = p.Stock - item.Cantidad
+			}
+		}
+		nuevo = append(nuevo, p)
+	}
+	return nuevo
 }
