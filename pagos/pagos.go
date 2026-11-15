@@ -1,21 +1,32 @@
-// Package pagos: módulo 5, pagos simulados. Cada método es una función validadora.
+// Paquete pagos: módulo 5, pagos simulados (no se cobra dinero real).
 package pagos
 
 import (
-	"regexp"
 	"strings"
-	m "tiendafacil/modelo"
+	"tiendafacil/modelo"
 )
 
-var Metodos = map[string]func(string) bool{
-	"TARJETA":       func(d string) bool { return regexp.MustCompile(`^\d{16}$`).MatchString(strings.ReplaceAll(d, " ", "")) },
-	"TRANSFERENCIA": func(d string) bool { return regexp.MustCompile(`^\d{6,}$`).MatchString(d) },
-	"EFECTIVO":      func(string) bool { return true },
+// Cada método de pago tiene su propia función que revisa el dato.
+// Se guardan en un mapa: nombre del método -> función que valida.
+var metodos = map[string]func(string) bool{
+	"TARJETA": func(numero string) bool {
+		numero = strings.ReplaceAll(numero, " ", "")
+		return len(numero) == 16
+	},
+	"TRANSFERENCIA": func(comprobante string) bool {
+		return len(comprobante) >= 6
+	},
+	"EFECTIVO": func(dato string) bool {
+		return true
+	},
 }
 
-func Pagar(p m.Pedido, metodo, dato string) m.Pedido {
-	if v, ok := Metodos[metodo]; ok && v(dato) {
-		return p.ConEstado(m.Pagado)
+// Pagar devuelve el pedido como PAGADO si el método existe y el dato es válido.
+// Si no, devuelve el pedido igual que estaba.
+func Pagar(pedido modelo.Pedido, metodo string, dato string) modelo.Pedido {
+	validar, existe := metodos[metodo]
+	if existe && validar(dato) {
+		pedido.Estado = modelo.Pagado
 	}
-	return p
+	return pedido
 }
