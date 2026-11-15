@@ -1,5 +1,6 @@
 // TiendaFácil: sistema de gestión de e-commerce.
-// main.go muestra el flujo completo de una venta, paso a paso.
+// main.go muestra el avance de la Etapa 1: catálogo, clientes y carrito.
+// Los pedidos, pagos y reportes están planificados para la siguiente etapa.
 package main
 
 import (
@@ -7,9 +8,6 @@ import (
 	"tiendafacil/carrito"
 	"tiendafacil/catalogo"
 	"tiendafacil/modelo"
-	"tiendafacil/pagos"
-	"tiendafacil/pedidos"
-	"tiendafacil/reportes"
 	"tiendafacil/usuarios"
 )
 
@@ -56,30 +54,9 @@ func main() {
 	fmt.Printf("Subtotal: $%.2f\n", carrito.Subtotal(miCarrito))
 	fmt.Printf("Total con 10%% de descuento + IVA 15%%: $%.2f\n", total)
 
-	// 5. Crear el pedido y pagarlo
-	fmt.Println("\n=== 4. Pedido y pago ===")
-	pedido, ok := pedidos.Crear(1, cliente, miCarrito, total)
-	if !ok {
-		fmt.Println("No se pudo crear el pedido: carrito vacío o sin stock")
-		return
-	}
-	fmt.Printf("Pedido #%d creado: %s\n", pedido.Numero, pedido.Estado)
-	pedido = pagos.Pagar(pedido, "TARJETA", "4111 1111 1111 1111")
-	fmt.Printf("Pedido #%d después del pago: %s\n", pedido.Numero, pedido.Estado)
-
-	// 6. Actualizar inventario y ver los reportes
-	inventario = pedidos.DescontarStock(inventario, pedido)
-	ventas := []modelo.Pedido{pedido}
-
-	fmt.Println("\n=== 5. Reportes ===")
-	fmt.Printf("Total vendido: $%.2f\n", reportes.TotalVendido(ventas))
-	fmt.Println("Unidades vendidas:")
-	unidades := reportes.UnidadesPorProducto(ventas)
-	for _, item := range miCarrito {
-		fmt.Printf("- %s: %d\n", item.Producto.Nombre, unidades[item.Producto.Nombre])
-	}
-	fmt.Println("Productos con stock bajo (menos de 5):")
-	for _, p := range reportes.StockBajo(inventario, 5) {
-		fmt.Printf("- %s (quedan %d)\n", p.Nombre, p.Stock)
-	}
+	// Lo que falta (siguiente etapa)
+	fmt.Println("\n=== Próximo avance ===")
+	fmt.Println("- pedidos: crear el pedido y descontar el stock")
+	fmt.Println("- pagos: pago simulado con tarjeta, transferencia o efectivo")
+	fmt.Println("- reportes: total vendido, unidades por producto y stock bajo")
 }
