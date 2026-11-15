@@ -1,24 +1,37 @@
-// Package reportes: módulo 6, reportes con map, filter y reduce.
+// Paquete reportes: módulo 6, información para que el dueño tome decisiones.
 package reportes
 
 import (
-	"tiendafacil/fn"
-	m "tiendafacil/modelo"
+	"tiendafacil/catalogo"
+	"tiendafacil/modelo"
 )
 
-func TotalVendido(ps []m.Pedido) float64 {
-	pagados := fn.Filter(ps, func(p m.Pedido) bool { return p.Estado == m.Pagado })
-	return fn.Reduce(pagados, 0.0, func(a float64, p m.Pedido) float64 { return a + p.Total })
+// TotalVendido suma el total de los pedidos que ya están pagados.
+func TotalVendido(pedidos []modelo.Pedido) float64 {
+	suma := 0.0
+	for _, p := range pedidos {
+		if p.Estado == modelo.Pagado {
+			suma = suma + p.Total
+		}
+	}
+	return suma
 }
 
-func UnidadesPorProducto(ps []m.Pedido) map[string]int {
-	items := fn.Reduce(ps, []m.ItemCarrito{}, func(a []m.ItemCarrito, p m.Pedido) []m.ItemCarrito { return append(a, p.Items...) })
-	return fn.Reduce(items, map[string]int{}, func(acc map[string]int, i m.ItemCarrito) map[string]int {
-		acc[i.Producto.Nombre] += i.Cantidad
-		return acc
+// UnidadesPorProducto cuenta cuántas unidades se vendieron de cada producto.
+func UnidadesPorProducto(pedidos []modelo.Pedido) map[string]int {
+	unidades := map[string]int{}
+	for _, p := range pedidos {
+		for _, item := range p.Items {
+			unidades[item.Producto.Nombre] = unidades[item.Producto.Nombre] + item.Cantidad
+		}
+	}
+	return unidades
+}
+
+// StockBajo devuelve los productos con menos unidades que el mínimo.
+// Reutiliza catalogo.Filtrar pasándole una función anónima.
+func StockBajo(inventario []modelo.Producto, minimo int) []modelo.Producto {
+	return catalogo.Filtrar(inventario, func(p modelo.Producto) bool {
+		return p.Stock < minimo
 	})
-}
-
-func StockBajo(inv []m.Producto, min int) []m.Producto {
-	return fn.Filter(inv, func(p m.Producto) bool { return p.Stock < min })
 }

@@ -1,44 +1,41 @@
-// Package modelo define los datos del negocio (se tratan como inmutables).
+// Paquete modelo: aquí están los datos que usa toda la tienda.
 package modelo
 
-import "time"
-
+// Producto es algo que la tienda vende.
 type Producto struct {
-	Codigo, Nombre, Categoria string
-	Precio                    float64
-	Stock                     int
+	Codigo    string
+	Nombre    string
+	Categoria string
+	Precio    float64
+	Stock     int
 }
 
-// ConStock devuelve una copia del producto con otro stock.
-func (p Producto) ConStock(n int) Producto { p.Stock = n; return p }
+// Cliente es la persona que compra.
+type Cliente struct {
+	Cedula string
+	Nombre string
+	Correo string
+}
 
-type Cliente struct{ Cedula, Nombre, Correo, Direccion string }
-
+// ItemCarrito es un producto dentro del carrito, con la cantidad que se quiere comprar.
 type ItemCarrito struct {
 	Producto Producto
 	Cantidad int
 }
 
-func (i ItemCarrito) Subtotal() float64 { return i.Producto.Precio * float64(i.Cantidad) }
-
+// EstadoPedido indica en qué paso está un pedido.
 type EstadoPedido string
 
 const (
 	Pendiente EstadoPedido = "PENDIENTE"
 	Pagado    EstadoPedido = "PAGADO"
-	Enviado   EstadoPedido = "ENVIADO"
-	Entregado EstadoPedido = "ENTREGADO"
-	Cancelado EstadoPedido = "CANCELADO"
 )
 
+// Pedido es la compra ya confirmada.
 type Pedido struct {
 	Numero  int
 	Cliente Cliente
 	Items   []ItemCarrito
 	Total   float64
 	Estado  EstadoPedido
-	Fecha   time.Time
 }
-
-// ConEstado devuelve una copia del pedido con otro estado.
-func (p Pedido) ConEstado(e EstadoPedido) Pedido { p.Estado = e; return p }

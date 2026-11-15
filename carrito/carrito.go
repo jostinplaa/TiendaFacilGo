@@ -1,39 +1,59 @@
-// Package carrito: módulo 3. Cada operación devuelve un carrito nuevo.
+// Paquete carrito: módulo 3, arma la compra y calcula el total.
 package carrito
 
-import (
-	"tiendafacil/fn"
-	m "tiendafacil/modelo"
-)
+import "tiendafacil/modelo"
 
-func Agregar(c []m.ItemCarrito, p m.Producto, cant int) []m.ItemCarrito {
-	mismo := func(i m.ItemCarrito) bool { return i.Producto.Codigo == p.Codigo }
-	if fn.Any(c, mismo) {
-		return fn.Map(c, func(i m.ItemCarrito) m.ItemCarrito {
-			if mismo(i) {
-				return m.ItemCarrito{Producto: p, Cantidad: i.Cantidad + cant}
-			}
-			return i
-		})
+// IVA de Ecuador: 15 %.
+const IVA = 0.15
+
+// Agregar devuelve un carrito NUEVO con el producto agregado.
+// El carrito anterior no se modifica.
+func Agregar(carrito []modelo.ItemCarrito, p modelo.Producto, cantidad int) []modelo.ItemCarrito {
+	nuevo := []modelo.ItemCarrito{}
+	for _, item := range carrito {
+		nuevo = append(nuevo, item)
 	}
-	return append(append([]m.ItemCarrito{}, c...), m.ItemCarrito{Producto: p, Cantidad: cant})
+	nuevo = append(nuevo, modelo.ItemCarrito{Producto: p, Cantidad: cantidad})
+	return nuevo
 }
 
-func Quitar(c []m.ItemCarrito, cod string) []m.ItemCarrito {
-	return fn.Filter(c, func(i m.ItemCarrito) bool { return i.Producto.Codigo != cod })
+// Quitar devuelve un carrito nuevo sin el producto de ese código.
+func Quitar(carrito []modelo.ItemCarrito, codigo string) []modelo.ItemCarrito {
+	nuevo := []modelo.ItemCarrito{}
+	for _, item := range carrito {
+		if item.Producto.Codigo != codigo {
+			nuevo = append(nuevo, item)
+		}
+	}
+	return nuevo
 }
 
-func Subtotal(c []m.ItemCarrito) float64 {
-	return fn.Reduce(c, 0.0, func(a float64, i m.ItemCarrito) float64 { return a + i.Subtotal() })
+// Subtotal suma precio x cantidad de cada producto.
+func Subtotal(carrito []modelo.ItemCarrito) float64 {
+	suma := 0.0
+	for _, item := range carrito {
+		suma = suma + item.Producto.Precio*float64(item.Cantidad)
+	}
+	return suma
 }
 
-// ConIVA aplica el IVA de Ecuador (15 %).
-var ConIVA = func(v float64) float64 { return v * 1.15 }
-
-func Descuento(pct float64) func(float64) float64 {
-	return func(v float64) float64 { return v * (1 - pct/100) }
+// Descuento crea y devuelve una función que quita un porcentaje.
+// Ejemplo: Descuento(10) devuelve una función que quita el 10 %.
+func Descuento(porcentaje float64) func(float64) float64 {
+	return func(valor float64) float64 {
+		return valor - valor*porcentaje/100
+	}
 }
 
-func Total(c []m.ItemCarrito, desc func(float64) float64) float64 {
-	return fn.Compose(desc, ConIVA)(Subtotal(c))
+// AplicarIVA suma el 15 % de IVA a un valor.
+func AplicarIVA(valor float64) float64 {
+	return valor + valor*IVA
+}
+
+// Total aplica primero el descuento y después el IVA.
+// El descuento llega como función, así se puede usar cualquier descuento.
+func Total(carrito []modelo.ItemCarrito, descuento func(float64) float64) float64 {
+	subtotal := Subtotal(carrito)
+	conDescuento := descuento(subtotal)
+	return AplicarIVA(conDescuento)
 }

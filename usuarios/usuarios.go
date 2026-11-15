@@ -1,26 +1,34 @@
-// Package usuarios: módulo 2, registro y validación de clientes.
+// Paquete usuarios: módulo 2, registra a los clientes.
 package usuarios
 
 import (
-	"errors"
-	"regexp"
 	"strings"
-	"tiendafacil/fn"
-	m "tiendafacil/modelo"
+	"tiendafacil/modelo"
 )
 
-var (
-	CedulaValida = func(c string) bool { return regexp.MustCompile(`^\d{10}$`).MatchString(c) }
-	CorreoValido = func(c string) bool { return regexp.MustCompile(`^[\w.+-]+@[\w-]+\.[\w.]+$`).MatchString(c) }
-)
-
-func Registrar(cedula, nombre, correo, dir string) (m.Cliente, error) {
-	if !CedulaValida(cedula) || !CorreoValido(correo) || strings.TrimSpace(nombre) == "" {
-		return m.Cliente{}, errors.New("datos del cliente no válidos")
+// CedulaValida revisa que la cédula tenga 10 dígitos y que todos sean números.
+func CedulaValida(cedula string) bool {
+	if len(cedula) != 10 {
+		return false
 	}
-	return m.Cliente{Cedula: cedula, Nombre: nombre, Correo: correo, Direccion: dir}, nil
+	for _, letra := range cedula {
+		if letra < '0' || letra > '9' {
+			return false
+		}
+	}
+	return true
 }
 
-func Buscar(cs []m.Cliente, cedula string) (m.Cliente, bool) {
-	return fn.Find(cs, func(c m.Cliente) bool { return c.Cedula == cedula })
+// CorreoValido revisa, de forma sencilla, que el correo tenga @ y un punto.
+func CorreoValido(correo string) bool {
+	return strings.Contains(correo, "@") && strings.Contains(correo, ".")
+}
+
+// Registrar crea el cliente solo si los datos son válidos.
+// Devuelve el cliente y true, o un cliente vacío y false.
+func Registrar(cedula, nombre, correo string) (modelo.Cliente, bool) {
+	if !CedulaValida(cedula) || !CorreoValido(correo) || nombre == "" {
+		return modelo.Cliente{}, false
+	}
+	return modelo.Cliente{Cedula: cedula, Nombre: nombre, Correo: correo}, true
 }
